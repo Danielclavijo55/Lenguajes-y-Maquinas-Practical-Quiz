@@ -1,0 +1,202 @@
+/**
+ * JavaCC file
+ */
+ 
+options {
+  IGNORE_CASE = false;
+  STATIC = false;
+}
+PARSER_BEGIN(ParserProlog)
+package uniandes.lym.parserJavaCC.parserProlog;
+
+
+import java.util.*;
+
+public class ParserProlog {
+
+  
+
+}
+
+
+PARSER_END(ParserProlog)
+
+SKIP :
+{
+ 	" " | "\r" | "\t" | "\n"
+}
+TOKEN : /* OPERATORS */
+{
+    <ARROW: ":-">
+  | < Symbol1: "< >" >
+  | < Symbol: "!" >
+  | < Symbol2: ":=" >
+  
+}
+TOKEN: {
+   <#CH: ~["\""] >//any character except quote
+|  <QUOTED: "\""  ( < CH > )* "\"" >
+}
+
+
+
+TOKEN: {  // Key Words
+	< CALL: "call" >
+|  	< FAIL: ",fail." >
+}
+
+TOKEN :
+{
+    < INT: ( <DIGIT> )+ >
+|   < #DIGIT: "0" | "1" | "2"| "3" | "4" | "5" |  "6" | "7" | "8" |"9" >
+|   < #UPPER: ["A"-"Z"] >
+|   < #LOWER: ["a"-"z"] >
+|   < VAR: ( <UPPER>  ( <UPPER > | < LOWER > | < DIGIT > )* )>
+|   < ATOM: ( <LOWER>  ( <UPPER > | < LOWER > | < DIGIT >)* )>
+}
+
+
+
+void hr():
+{}
+{
+  
+ functor() [< ARROW>   (    (< Symbol >) | (< CALL >"("( functor()|<VAR>)")") | (functor() ("=.." (<VAR>|list()))?) | (<INT> ":=" exp()) | (<VAR> ((":=" exp())|("=.." (<VAR>|list()))))    ) (","  (    (< Symbol >) | (< CALL >"("( functor()|<VAR>)")") | (functor() ("=.." (<VAR>|list()))?) | (<INT> ":=" exp()) | (<VAR> ((":=" exp())|("=.." (<VAR>|list()))))    ))*] "."
+
+
+	}
+
+
+void functor(): 
+{}
+{
+(
+  	< ATOM > ("(" arg() (","  arg())* ")")?
+)
+	
+}
+void arg():
+{}
+{
+  < INT > | functor() | list() | < VAR > | < QUOTED >
+}
+
+void list() :
+{}
+
+{
+
+"[" (arg() (","  arg())* ("|" arg())?)? "]"}
+void exp() :
+{
+  }
+{
+// Parses  E -> E + T
+//         E -> E - T
+//         E -> T
+//   in EBNF:  E -> T {+ T   | - T }
+  
+ term() ( "+"term() 
+          | "-" term()  
+         )*
+}
+void term() :
+{
+}
+{
+// Parses  T -> T * F
+//         T -> T / F
+//         T -> F
+//   in EBNF:  T -> F {* F   | /  F }
+  
+ fact() ( "*"  fact()
+ 
+   
+ | "/" fact()
+  
+
+ )*
+}
+void fact() :
+{
+// Parses  F -> B
+//         F -> -F
+//         B -> num
+//         B -> '(' E ')'
+//         B -> var
+//   in EBNF:  F -> -F  |  (var |num |'(' E ')')
+//   we don't remove right recursion
+
+
+int  v,pos;
+ 
+}
+{
+
+   "-"  fact() 
+   |  pos=variable() 
+   | v=num() 
+   |  "("exp() ")"
+                             
+}
+
+
+int num() throws Error:
+{	
+	int total=-9999;
+	Token token;
+}
+
+{
+	(token=<INT>)
+
+	{ 
+		try {
+			total = Integer.valueOf(token.image);
+		} 
+		catch (NumberFormatException ee) 
+		{
+			throw new Error("Number too large: "+token.image);
+		}
+		return total;
+     }
+     
+       
+}
+
+
+int variable() throws Error:
+{	
+	int pos,total=1;
+	Token token;
+}
+
+{
+	(token=<VAR>)
+
+	  
+{
+  // returns an int corresponding to the variable's name  0 for $00, 1 for $01.... 17 for $17..
+  //  upto  19 for $19. We only have 20 variables.
+  
+         pos = (token.image.charAt(1)-'0')*10 + (token.image.charAt(2)-'0');
+         if (pos > 19)throw new Error("Variable does not exist:  "+ token.image);
+         return pos;
+         
+}   
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
